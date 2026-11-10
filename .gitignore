@@ -1,0 +1,23 @@
+# data never goes to GitHub
+data/
+cache/
+logs/
+*.db
+*.sqlite
+*.sqlite*
+*.pdf
+*.xml
+.env
+
+# python
+.venv/
+__pycache__/
+*.pyc
+*.egg-info/
+build/
+dist/
+.pytest_cache/
+.ruff_cache/
+
+# generated site (regenerated each run on the Pi)
+web/out/

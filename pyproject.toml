@@ -1,0 +1,38 @@
+[project]
+name = "sebi-enforcement-decoder"
+version = "0.1.0"
+description = "Searchable database of SEBI enforcement/adjudication orders mapped to companies and promoters, built for a Raspberry Pi 5."
+requires-python = ">=3.11"
+license = { text = "MIT" }
+dependencies = [
+  "httpx>=0.27",
+  "beautifulsoup4>=4.12",
+  "lxml>=5",
+  "pypdfium2>=4.30",
+  "pydantic>=2.7",
+  "pyyaml>=6",
+  "python-dotenv>=1",
+  "anthropic>=0.40",
+  "jinja2>=3.1",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8", "ruff>=0.5"]
+ocr = ["pytesseract>=0.3"]
+
+[project.scripts]
+sed = "sed.cli:main"
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

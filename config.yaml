@@ -1,0 +1,65 @@
+# sebi-enforcement-decoder — runtime config
+# Paths: code lives in ~/projects/sebi-enforcement-decoder, ALL data on the HDD.
+# PLACEHOLDER until the Pi is connected and the real mount path is confirmed.
+data_root: /mnt/hdd/sebi-enforcement-decoder
+timezone: Asia/Kolkata
+
+paths:            # all relative to data_root
+  db: db/sed.sqlite
+  pdfs: pdfs
+  http_cache: cache/http
+  llm_cache: cache/llm
+  logs: logs
+  site: site      # static HTML output served by nginx/Caddy
+
+http:
+  min_interval_seconds: 2.5        # max 1 request / 2-3 s per host
+  max_tries: 5                     # exponential backoff on 403/429/5xx, then log + skip
+  backoff_base_seconds: 4
+  timeout_seconds: 60
+  user_agent: "Mozilla/5.0 (X11; Linux aarch64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36"
+
+sqlite:
+  journal_mode: WAL
+  busy_timeout_ms: 30000
+  batch_size: 500                  # rows per transaction (500-1000)
+
+scrape:
+  base_url: https://www.sebi.gov.in
+  backfill_from: 2015-01-01        # go earlier only after count + cost is shown
+  skip_hindi: true
+  categories:                      # sebi.gov.in -> Enforcement -> Orders
+    - chairman_members
+    - adjudicating_officer
+    - settlement
+    - ed_cgm
+    - other
+
+pdf:
+  engine: pypdfium2                # page-by-page; PyMuPDF deliberately NOT used (AGPL)
+  min_chars_per_page_for_text_layer: 40   # below this on most pages -> scanned -> OCR queue
+  ocr_enabled: false               # tesseract, low priority, run separately
+
+llm:
+  provider: anthropic
+  model: claude-sonnet-5-5         # extraction; swap per task without touching code
+  prompt_version: extract_v1
+  max_input_tokens_per_order: 12000   # only relevant sections are sent, never whole PDFs
+  max_output_tokens: 4000
+  retry_on_invalid_json: 1         # retry once, else mark needs_review
+  monthly_spend_cap_inr: 1500
+  usd_inr: 84.0
+  # Fill from https://docs.claude.com pricing before the first bulk run — do not guess.
+  price_usd_per_mtok:
+    input: null
+    output: null
+
+cron:
+  # proposed slot: 21:30 IST daily — well clear of governance-red-flag-engine (~19:45 IST)
+  schedule: "30 21 * * *"
+  lock: /tmp/sebi-enforcement-decoder.lock
+
+legal:
+  footer: "Indicators derived from public filings; not an allegation, investment advice, or legal opinion."
+  settlement_banner: "Settled without admission or denial of guilt."
+  interim_banner: "Interim — not a final finding."
