@@ -7,7 +7,7 @@ Resume from here after any interruption. Don't redo ticked items.
 | 0 | GitHub repo attached (`abhijithcw/sebi-enforcement-decoder`) | ✅ 10 Nov 2026 |
 | 1 | Extraction schema: `sql/schema.sql`, `src/sed/schema.py`, `prompts/extract_v1.md`, `amounts.py`, `entity.py`, `db.py`, `config.py`, tests (21 pass) | ✅ 10 Nov 2026 — awaiting user review before scale |
 | 2 | Scraper (`src/sed/http.py`, `scrape.py`, `sed scrape`/`sed count`): AJAX listing → item HTML → iframe PDF; checkpoints; fixture tests (25 pass). **Not yet run live** — sandbox can't reach sebi.gov.in; first live run on the Pi (`sed count`, then `sed scrape --max-pages 2`) | ✅ code · ⏳ live smoke test |
-| 3 | PDF text (`src/sed/pdftext.py`): pypdfium2 page-by-page → `order_pages` + FTS; scanned detection → OCR queue | ⬜ |
+| 3 | PDF text (`src/sed/pdftext.py`, `ocr.py`; `sed extract-text` / `sed ocr` / `sed fts`): pypdfium2 page-by-page → `order_pages` + FTS5; scanned detection → OCR queue; 30 tests incl. OCR round-trip + memory check | ✅ 12 Nov 2026 |
 | 4 | LLM extraction (`src/sed/extract.py`): section selection, cache, pydantic validation, cost estimate + cap | ⬜ |
 | 5 | Storage: map `ExtractedOrder` → tables, entity resolution/merge | ⬜ |
 | 6 | Site (`src/sed/site.py` + `web/`): static mobile-first HTML, JSON index, MiniSearch | ⬜ |

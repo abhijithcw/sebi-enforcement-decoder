@@ -36,7 +36,13 @@ def main(argv: list[str] | None = None) -> int:
     ct = sub.add_parser("count", help="order counts per category for a date range (1 request each)")
     ct.add_argument("--from", dest="frm", type=date.fromisoformat)
     ct.add_argument("--to", dest="to", type=date.fromisoformat)
-    for name in ("extract-text", "estimate", "extract", "build-site", "run"):
+    et = sub.add_parser("extract-text", help="pdf -> order_pages + FTS5; scanned PDFs queued for OCR")
+    et.add_argument("--limit", type=int)
+    oc = sub.add_parser("ocr", help="OCR queued scanned PDFs (tesseract; run niced, low priority)")
+    oc.add_argument("--limit", type=int)
+    fs = sub.add_parser("fts", help="full-text search over order pages")
+    fs.add_argument("query")
+    for name in ("estimate", "extract", "build-site", "run"):
         sub.add_parser(name)
     args = p.parse_args(argv)
 
@@ -70,6 +76,22 @@ def main(argv: list[str] | None = None) -> int:
         rep = sc.run(smids=args.smid, frm=frm, to=args.to, max_pages=args.max_pages,
                      pdf_limit=args.pdf_limit, listing_only=args.listing_only)
         print(json.dumps(rep, indent=2, default=str))
+        return 0
+
+    if args.cmd in ("extract-text", "ocr", "fts"):
+        logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
+        con = db.connect(cfg)
+        db.init_db(con)
+        if args.cmd == "extract-text":
+            from . import pdftext
+            print(json.dumps(pdftext.extract_all(cfg, con, args.limit)))
+        elif args.cmd == "ocr":
+            from . import ocr
+            print(json.dumps(ocr.ocr_queue(cfg, con, args.limit)))
+        else:
+            from . import pdftext
+            for r in pdftext.search(con, args.query):
+                print(f"{r['order_id']} p{r['page_no']}: {r['snip']}")
         return 0
 
     print(f"{args.cmd}: not implemented yet (see docs/STATUS.md)", file=sys.stderr)
