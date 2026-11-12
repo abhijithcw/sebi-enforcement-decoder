@@ -8,7 +8,7 @@ Resume from here after any interruption. Don't redo ticked items.
 | 1 | Extraction schema: `sql/schema.sql`, `src/sed/schema.py`, `prompts/extract_v1.md`, `amounts.py`, `entity.py`, `db.py`, `config.py`, tests (21 pass) | ✅ 10 Nov 2026 — awaiting user review before scale |
 | 2 | Scraper (`src/sed/http.py`, `scrape.py`, `sed scrape`/`sed count`): AJAX listing → item HTML → iframe PDF; checkpoints; fixture tests (25 pass). **Not yet run live** — sandbox can't reach sebi.gov.in; first live run on the Pi (`sed count`, then `sed scrape --max-pages 2`) | ✅ code · ⏳ live smoke test |
 | 3 | PDF text (`src/sed/pdftext.py`, `ocr.py`; `sed extract-text` / `sed ocr` / `sed fts`): pypdfium2 page-by-page → `order_pages` + FTS5; scanned detection → OCR queue; 30 tests incl. OCR round-trip + memory check | ✅ 12 Nov 2026 |
-| 4 | LLM extraction (`src/sed/extract.py`): section selection, cache, pydantic validation, cost estimate + cap | ⬜ |
+| 4 | LLM extraction (`src/sed/extract.py`; `sed estimate` / `sed extract`): section selection, cache by (sha, prompt, model), forced-tool JSON, pydantic + 1 retry, verbatim-snippet verification, ₹ estimate, monthly cap; 35 tests with fake client. **No real API call made yet.** | ✅ 13 Nov 2026 |
 | 5 | Storage: map `ExtractedOrder` → tables, entity resolution/merge | ⬜ |
 | 6 | Site (`src/sed/site.py` + `web/`): static mobile-first HTML, JSON index, MiniSearch | ⬜ |
 | — | Pi: confirm HDD mount path, set `data_root`, install cron | ⬜ blocked on Pi |
@@ -19,7 +19,7 @@ Resume from here after any interruption. Don't redo ticked items.
 1. **Pre-2015 backfill** — count + cost will be shown after step 2 runs the listing once.
 2. **Appeal data source** — SAT orders live on sat.gov.in (not SEBI). Option A: only record appeals SEBI itself mentions (cheap, incomplete). Option B: add a second scraper for SAT. Schema supports both; default is A.
 3. **Model for extraction** — config says `claude-sonnet-5-5`; Haiku 5.5 may be enough for simple adjudication orders. Decide after the cost estimate in step 4.
-4. **Pricing** — `llm.price_usd_per_mtok` is deliberately `null`; fill from docs.claude.com before the first estimate.
+4. ~~Pricing~~ — filled in config from the Anthropic pricing page (12 Nov 2026): Sonnet 5.5 $2/$10, Haiku 5.5 $0.10/$0.50 per MTok, Batch API 50% off.
 
 ## Conventions
 

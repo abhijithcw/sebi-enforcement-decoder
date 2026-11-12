@@ -42,7 +42,14 @@ def main(argv: list[str] | None = None) -> int:
     oc.add_argument("--limit", type=int)
     fs = sub.add_parser("fts", help="full-text search over order pages")
     fs.add_argument("query")
-    for name in ("estimate", "extract", "build-site", "run"):
+    es = sub.add_parser("estimate", help="token + ₹ estimate for pending orders, per model (no API calls)")
+    es.add_argument("--model", action="append", help="repeatable; default: config model + Haiku 5.5")
+    es.add_argument("--limit", type=int)
+    ex = sub.add_parser("extract", help="LLM extraction (shows estimate; bulk runs need --yes)")
+    ex.add_argument("--model")
+    ex.add_argument("--limit", type=int)
+    ex.add_argument("--yes", action="store_true", help="confirm spend for runs above 25 orders")
+    for name in ("build-site", "run"):
         sub.add_parser(name)
     args = p.parse_args(argv)
 
@@ -92,6 +99,27 @@ def main(argv: list[str] | None = None) -> int:
             from . import pdftext
             for r in pdftext.search(con, args.query):
                 print(f"{r['order_id']} p{r['page_no']}: {r['snip']}")
+        return 0
+
+    if args.cmd in ("estimate", "extract"):
+        from . import extract
+        con = db.connect(cfg)
+        db.init_db(con)
+        models = [getattr(args, "model", None)] if args.cmd == "extract" and args.model else (
+            args.model or [cfg.llm["model"], "claude-haiku-5-5"])
+        est = extract.estimate(cfg, con, models, args.limit)
+        print(extract.format_estimate(est))
+        if args.cmd == "estimate":
+            return 0
+        if est["orders"] > 25 and not args.yes:
+            print("Above 25 orders: re-run with --yes to spend. Nothing sent.", file=sys.stderr)
+            return 3
+        if not cfg.anthropic_api_key:
+            print("ANTHROPIC_API_KEY missing in .env", file=sys.stderr)
+            return 4
+        import anthropic
+        print(json.dumps(extract.run(cfg, con, anthropic.Anthropic(api_key=cfg.anthropic_api_key),
+                                     args.model, args.limit)))
         return 0
 
     print(f"{args.cmd}: not implemented yet (see docs/STATUS.md)", file=sys.stderr)

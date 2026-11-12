@@ -49,10 +49,14 @@ llm:
   retry_on_invalid_json: 1         # retry once, else mark needs_review
   monthly_spend_cap_inr: 1500
   usd_inr: 84.0
-  # Fill from https://docs.claude.com pricing before the first bulk run — do not guess.
-  price_usd_per_mtok:
-    input: null
-    output: null
+  est_output_tokens: 1800           # typical JSON size, used only for estimates
+  # USD per million tokens, from platform.claude.com/docs/en/about-claude/pricing (checked 12 Nov 2026).
+  # Haiku 5.5 rates are for prompts <=100K tokens (ours are capped at 12K). Batch API = 50% off both.
+  prices_usd_per_mtok:
+    claude-sonnet-5-5: { input: 2.00, output: 10.00 }
+    claude-haiku-5-5:  { input: 0.10, output: 0.50 }
+    claude-opus-5-5:   { input: 4.00, output: 20.00 }
+  batch_discount: 0.5
 
 cron:
   # proposed slot: 21:30 IST daily — well clear of governance-red-flag-engine (~19:45 IST)
