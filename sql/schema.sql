@@ -14,6 +14,8 @@ CREATE TABLE IF NOT EXISTS schema_version (
 CREATE TABLE IF NOT EXISTS orders (
   order_id            TEXT PRIMARY KEY,           -- sha1(html_url)[:16]; stable across runs
   sebi_ref            TEXT,                       -- e.g. "WTM/AB/IVD/ID3/27563/2023-24" or "Order/AK/RS/2024-25/30101"
+  source_smid         INTEGER,                    -- sebi.gov.in sub-category id (2=Chair/Members, 6=AO, 3/146=Settlement, 133=ED/CGM, 138=Reg 30A)
+  corrigendum_urls    TEXT,                       -- JSON list from listing '[Corrigendum]' links
   source_category     TEXT NOT NULL CHECK (source_category IN
                         ('chairman_members','adjudicating_officer','settlement','ed_cgm','other')),
   listing_title       TEXT NOT NULL,              -- title as shown on sebi.gov.in listing
@@ -205,6 +207,14 @@ CREATE TABLE IF NOT EXISTS http_cache (
   status              INTEGER,
   path                TEXT NOT NULL,              -- raw response body on disk, relative to data_root
   fetched_at          TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+-- ------------------------------------------------------------ checkpoints
+-- Scraper progress per (category, window): resume after interruption without redoing pages.
+CREATE TABLE IF NOT EXISTS checkpoints (
+  name                TEXT PRIMARY KEY,
+  value               TEXT NOT NULL,
+  updated_at          TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
 -- --------------------------------------------------------------- run log

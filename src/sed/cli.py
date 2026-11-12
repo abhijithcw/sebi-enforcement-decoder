@@ -12,7 +12,9 @@ from __future__ import annotations
 
 import argparse
 import json
+import logging
 import sys
+from datetime import date
 
 from . import config, db, schema
 
@@ -24,7 +26,17 @@ def main(argv: list[str] | None = None) -> int:
     sub = p.add_subparsers(dest="cmd", required=True)
     sub.add_parser("init-db")
     sub.add_parser("schema")
-    for name in ("scrape", "extract-text", "estimate", "extract", "build-site", "run"):
+    sc = sub.add_parser("scrape", help="listing -> item html -> pdf (resumable)")
+    sc.add_argument("--from", dest="frm", type=date.fromisoformat, help="YYYY-MM-DD (default: config backfill_from)")
+    sc.add_argument("--to", dest="to", type=date.fromisoformat)
+    sc.add_argument("--smid", type=int, action="append", help="only this sub-category id (repeatable)")
+    sc.add_argument("--max-pages", type=int, help="cap listing pages per window (smoke test)")
+    sc.add_argument("--pdf-limit", type=int, help="cap item/PDF fetches this run")
+    sc.add_argument("--listing-only", action="store_true", help="skip item pages and PDF downloads")
+    ct = sub.add_parser("count", help="order counts per category for a date range (1 request each)")
+    ct.add_argument("--from", dest="frm", type=date.fromisoformat)
+    ct.add_argument("--to", dest="to", type=date.fromisoformat)
+    for name in ("extract-text", "estimate", "extract", "build-site", "run"):
         sub.add_parser(name)
     args = p.parse_args(argv)
 
@@ -38,6 +50,26 @@ def main(argv: list[str] | None = None) -> int:
         con = db.connect(cfg)
         db.init_db(con)
         print(f"schema ready at {cfg.db_path}")
+        return 0
+
+    if args.cmd in ("scrape", "count"):
+        from .scrape import CATEGORIES, Scraper
+        logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
+        con = db.connect(cfg)
+        db.init_db(con)
+        sc = Scraper(cfg, con)
+        frm = args.frm or date.fromisoformat(str(cfg.scrape["backfill_from"]))
+        if args.cmd == "count":
+            total = 0
+            for smid, (cat, label) in CATEGORIES.items():
+                n = sc.count(smid, frm, args.to or date.today())
+                total += n
+                print(f"{smid:>4} {cat:<20} {n:>6}  {label}")
+            print(f"total since {frm}: {total} orders (~{total // 25 + 1} listing pages)")
+            return 0
+        rep = sc.run(smids=args.smid, frm=frm, to=args.to, max_pages=args.max_pages,
+                     pdf_limit=args.pdf_limit, listing_only=args.listing_only)
+        print(json.dumps(rep, indent=2, default=str))
         return 0
 
     print(f"{args.cmd}: not implemented yet (see docs/STATUS.md)", file=sys.stderr)
