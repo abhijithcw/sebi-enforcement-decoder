@@ -43,7 +43,7 @@ Resume from here after any interruption. Don't redo ticked items.
 * smid: 2 Chair/Members (6,433 total) · 6 AO (12,023) · 3 Settlement/Board (1,981) · 146 Settlement/Tribunal (27) · 133 ED/CGM (447) · 138 Reg 30A (52). SAT (1), Courts (7, 77) deliberately skipped.
 * Since 2015-01-01: 3,114 + 7,810 + 961 + 2 + 447 + 52 = **12,386 orders** (≈ 500 listing pages).
 * Rows link either to an HTML page (PDF in `<iframe src=".../web/?file=<pdf>">`) or straight to a `.pdf`. "[Corrigendum]" links are nested `<a>` inside the title anchor — stored in `orders.corrigendum_urls`.
-* Hindi duplicates: no marker found in the samples inspected; heuristic = "hindi"/Devanagari in title or URL. Verify on first live run.
+* Hindi duplicates: no marker found in the samples inspected. Two guards: (1) listing/URL contains "hindi"/Devanagari → skipped at scrape; (2) after download, PDF text >30% Devanagari → `language='hi'`, `extraction_status='skipped'`, no pages stored, never sent to the LLM. Check `SELECT COUNT(*) FROM orders WHERE language='hi'` after the first live run.
 
 ## Site design decisions
 

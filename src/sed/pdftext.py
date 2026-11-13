@@ -50,6 +50,17 @@ def iter_pages(pdf_path) -> Iterator[tuple[int, str]]:
         pdf.close()
 
 
+_DEVANAGARI_RE = re.compile(r"[\u0900-\u097f]")
+_LETTER_RE = re.compile(r"[^\W\d_]", re.UNICODE)
+
+
+def devanagari_ratio(pages: list[tuple[int, str]]) -> float:
+    """Share of letters that are Devanagari — catches Hindi copies the listing didn't label."""
+    text = " ".join(t for _, t in pages)
+    letters = len(_LETTER_RE.findall(text))
+    return len(_DEVANAGARI_RE.findall(text)) / letters if letters else 0.0
+
+
 def has_text_layer(char_counts: list[int], min_chars: int) -> bool:
     if not char_counts:
         return False
@@ -72,7 +83,7 @@ def store_pages(con, order_id: str, pages: list[tuple[int, str]]) -> None:
 
 
 def extract_order(cfg: Config, con, order_id: str, pdf_rel_path: str) -> str:
-    """Returns 'text', 'scanned' or 'failed'."""
+    """Returns 'text', 'scanned', 'hindi' or 'failed'."""
     min_chars = int(cfg.pdf["min_chars_per_page_for_text_layer"])
     path = cfg.data_root / pdf_rel_path
     try:
@@ -82,6 +93,11 @@ def extract_order(cfg: Config, con, order_id: str, pdf_rel_path: str) -> str:
         _set(con, order_id, fetch_status="fetch_failed", extraction_notes=f"pdf unreadable: {e}"[:200])
         return "failed"
     counts = [len(t) for _, t in pages]
+    if devanagari_ratio(pages) > 0.3:       # Hindi duplicate: skip, never stored, never sent to the LLM
+        _set(con, order_id, page_count=len(pages), language="hi", has_text_layer=1, ocr_status="not_needed",
+             fetch_status="text_extracted", extraction_status="skipped",
+             extraction_notes="Hindi duplicate (Devanagari text) — skipped")
+        return "hindi"
     if has_text_layer(counts, min_chars):
         store_pages(con, order_id, pages)
         _set(con, order_id, page_count=len(pages), has_text_layer=1, ocr_status="not_needed",
@@ -97,7 +113,7 @@ def extract_all(cfg: Config, con, limit: int | None = None) -> dict:
          "AND (has_text_layer IS NULL) ORDER BY listing_date DESC")
     if limit:
         q += f" LIMIT {int(limit)}"
-    stats = {"text": 0, "scanned": 0, "failed": 0}
+    stats = {"text": 0, "scanned": 0, "failed": 0, "hindi": 0}
     for row in con.execute(q).fetchall():
         stats[extract_order(cfg, con, row["order_id"], row["pdf_path"])] += 1
     return stats

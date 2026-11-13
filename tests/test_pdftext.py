@@ -59,7 +59,7 @@ def test_text_pdf_extracts_pages_and_fts(env):
                   ["ORDER\nNoticee: Ramesh Kumar penalty of Rs. 5,00,000/-" + " filler" * 20,
                    "Page two: Regulation 4(1) of PFUTP Regulations" + " filler" * 20])
     add_order(con, "a", "pdfs/a.pdf")
-    assert pdftext.extract_all(cfg, con) == {"text": 1, "scanned": 0, "failed": 0}
+    assert pdftext.extract_all(cfg, con) == {"text": 1, "scanned": 0, "failed": 0, "hindi": 0}
     o = con.execute("SELECT * FROM orders WHERE order_id='a'").fetchone()
     assert o["page_count"] == 2 and o["has_text_layer"] == 1 and o["fetch_status"] == "text_extracted"
     hits = pdftext.search(con, "PFUTP")
@@ -106,3 +106,16 @@ def test_memory_flat_on_big_pdf(env):
     grown_mb = (resource.getrusage(resource.RUSAGE_SELF).ru_maxrss - before) / 1024
     assert con.execute("SELECT page_count FROM orders WHERE order_id='big'").fetchone()[0] == 300
     assert grown_mb < 150
+
+
+def test_hindi_pdf_skipped(env, monkeypatch):
+    cfg, con = env
+    (cfg.data_root / "pdfs/h.pdf").write_bytes(b"x")
+    add_order(con, "h", "pdfs/h.pdf")
+    hindi = "भारतीय प्रतिभूति और विनिमय बोर्ड का आदेश " * 10
+    monkeypatch.setattr(pdftext, "iter_pages", lambda p: iter([(1, hindi), (2, hindi)]))
+    assert pdftext.extract_order(cfg, con, "h", "pdfs/h.pdf") == "hindi"
+    o = con.execute("SELECT language, extraction_status FROM orders WHERE order_id='h'").fetchone()
+    assert (o[0], o[1]) == ("hi", "skipped")
+    assert con.execute("SELECT COUNT(*) FROM order_pages").fetchone()[0] == 0
+    assert pdftext.devanagari_ratio([(1, "English with one शब्द")]) < 0.3
