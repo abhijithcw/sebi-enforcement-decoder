@@ -10,7 +10,8 @@ Resume from here after any interruption. Don't redo ticked items.
 | 3 | PDF text (`src/sed/pdftext.py`, `ocr.py`; `sed extract-text` / `sed ocr` / `sed fts`): pypdfium2 page-by-page → `order_pages` + FTS5; scanned detection → OCR queue; 30 tests incl. OCR round-trip + memory check | ✅ 12 Nov 2026 |
 | 4 | LLM extraction (`src/sed/extract.py`; `sed estimate` / `sed extract`): section selection, cache by (sha, prompt, model), forced-tool JSON, pydantic + 1 retry, verbatim-snippet verification, ₹ estimate, monthly cap; 35 tests with fake client. **No real API call made yet.** | ✅ 13 Nov 2026 |
 | 5 | Storage (`src/sed/store.py`; `sed rebuild`): `ExtractedOrder` → orders/entities/noticees/penalties/violations/appeals; cin>isin>pan>name resolution with promotion/merge; idempotent; amounts parsed in Python; 39 tests | ✅ 13 Nov 2026 |
-| 6 | Site (`src/sed/site.py` + `web/`): static mobile-first HTML, JSON index, MiniSearch | ⬜ |
+| 6 | Site (`src/sed/site.py`, `web/`; `sed build-site`): static mobile-first HTML, atomic swap, MiniSearch (vendored, MIT) fuzzy search over compact JSON index; legal rules centralised + tested; verified at 360px in headless Chrome | ✅ 13 Nov 2026 |
+| 6b | `sed run` orchestrator (scrape → extract-text → extract → build-site) for cron | ⬜ next |
 | — | Pi: confirm HDD mount path, set `data_root`, install cron | ⬜ blocked on Pi |
 
 ## Open decisions for Abhijith
@@ -34,3 +35,12 @@ Resume from here after any interruption. Don't redo ticked items.
 * Since 2015-01-01: 3,114 + 7,810 + 961 + 2 + 447 + 52 = **12,386 orders** (≈ 500 listing pages).
 * Rows link either to an HTML page (PDF in `<iframe src=".../web/?file=<pdf>">`) or straight to a `.pdf`. "[Corrigendum]" links are nested `<a>` inside the title anchor — stored in `orders.corrigendum_urls`.
 * Hindi duplicates: no marker found in the samples inspected; heuristic = "hindi"/Devanagari in title or URL. Verify on first live run.
+
+## Site design decisions
+
+* Only `extraction_status='done'` orders are published; `needs_review` stays private until reviewed.
+* No aggregate penalty totals anywhere (joint-and-several amounts and SAT set-asides make sums misleading).
+* SAT-set-aside orders link to the SAT order only when `appeals.appeal_order_url` is known; with no SAT scraper that is
+  currently never, so the link falls back to sat.gov.in. Revisit if a SAT source is ever added.
+* Entities merge only on CIN/ISIN/PAN or exact normalised name — two people with the same name and no identifier
+  can be wrongly merged; the entity page says "identity matched by name only" in that case.

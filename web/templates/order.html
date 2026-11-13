@@ -1,0 +1,30 @@
+{% extends "base.html" %}{% block body %}
+<div class="{% if o.struck %}struck{% endif %}">
+  <span class="badge{% if o.interim %} interim{% elif o.settlement %} settle{% endif %}">{{ o.type_label }}</span>
+  <h1 class="t">{{ o.title }}</h1>
+</div>
+{% if o.interim %}<div class="banner interim">{{ interim_banner }}</div>{% endif %}
+{% if o.settlement %}<div class="banner settle">{{ settlement_banner }}</div>{% endif %}
+{% if o.sat_note %}<div class="banner sat">{{ o.sat_note }}{% if o.sat_url %} <a href="{{ o.sat_url }}" rel="noopener">View the SAT order</a>{% else %} <a href="https://sat.gov.in" rel="noopener">Securities Appellate Tribunal</a>{% endif %}</div>{% endif %}
+<dl class="kv">
+  <dt>Date</dt><dd>{{ o.date }}</dd>
+  {% if o.ref %}<dt>Reference</dt><dd>{{ o.ref }}</dd>{% endif %}
+  {% if o.authority %}<dt>Issued by</dt><dd>{{ o.authority }}{% if o.signatory %} ({{ o.signatory }}){% endif %}</dd>{% endif %}
+  <dt>Appeal</dt><dd>{{ o.appeal_label }}</dd>
+  <dt>Source</dt><dd><a href="{{ o.html_url }}" rel="noopener">SEBI page</a>{% if o.pdf_url %} · <a href="{{ o.pdf_url }}" rel="noopener">PDF</a>{% endif %}</dd>
+</dl>
+{% if o.summary %}<h2>Matter</h2><p>{{ o.summary }}</p>{% endif %}
+<h2>Noticees and outcomes ({{ o.noticees|length }})</h2>
+{% for n in o.noticees %}
+<div class="card">
+  <strong>{% if n.slug %}<a href="{{ root }}e/{{ n.slug }}.html">{{ n.name }}</a>{% else %}{{ n.name }}{% endif %}</strong>
+  <div class="meta">{{ n.role }}{% if n.role_detail %} — {{ n.role_detail }}{% endif %}{% if n.pan %} · PAN {{ n.pan }}{% endif %}</div>
+  <p style="margin:.5em 0 0"><span class="badge">{{ n.outcome }}</span>{% if n.outcome_detail %} {{ n.outcome_detail }}{% endif %}{% if n.debarment %} <span class="meta">({{ n.debarment }})</span>{% endif %}</p>
+  {% for p in n.penalties %}<p style="margin:.4em 0 0"><span class="amt">{{ p.amount }}</span> <span class="meta">{{ p.kind }}{% if p.provision %} · {{ p.provision }}{% endif %}{% if p.joint %} · jointly and severally{% if p.group %} (group {{ p.group }}){% endif %}{% endif %}</span></p>{% endfor %}
+  {% if n.violations %}<details><summary>Provisions cited ({{ n.violations|length }})</summary>{% for v in n.violations %}<p style="margin:.3em 0">{{ v.regulation }}{% if v.clause %} — {{ v.clause }}{% endif %} <span class="badge">{{ v.finding }}</span></p>{% endfor %}</details>{% endif %}
+  <details><summary>Evidence (page {{ n.page }})</summary><div class="ev">“{{ n.snippet }}”</div>{% for p in n.penalties %}<div class="ev">p. {{ p.page }}: “{{ p.snippet }}”</div>{% endfor %}</details>
+</div>
+{% endfor %}
+{% if o.order_violations %}<h2>Provisions cited in the order</h2>{% for v in o.order_violations %}<div class="card">{{ v.regulation }}{% if v.clause %} — {{ v.clause }}{% endif %} <span class="badge">{{ v.finding }}</span><div class="ev">p. {{ v.page }}: “{{ v.snippet }}”</div></div>{% endfor %}{% endif %}
+<p class="meta">Extracted by {{ o.model }} (prompt {{ o.prompt_version }}). Verify against the PDF before relying on it.</p>
+{% endblock %}

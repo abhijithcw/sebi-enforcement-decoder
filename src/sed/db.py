@@ -28,6 +28,8 @@ def init_db(con: sqlite3.Connection) -> None:
 
 @contextmanager
 def tx(con: sqlite3.Connection):
+    if con.in_transaction:          # flush any implicit transaction a caller left open
+        con.commit()
     try:
         con.execute("BEGIN")
         yield con

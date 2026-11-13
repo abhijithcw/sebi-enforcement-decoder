@@ -50,7 +50,8 @@ def main(argv: list[str] | None = None) -> int:
     ex.add_argument("--limit", type=int)
     ex.add_argument("--yes", action="store_true", help="confirm spend for runs above 25 orders")
     sub.add_parser("rebuild", help="re-apply cached extractions to the tables (no API calls)")
-    for name in ("build-site", "run"):
+    sub.add_parser("build-site", help="regenerate the static site + search index")
+    for name in ("run",):
         sub.add_parser(name)
     args = p.parse_args(argv)
 
@@ -100,6 +101,13 @@ def main(argv: list[str] | None = None) -> int:
             from . import pdftext
             for r in pdftext.search(con, args.query):
                 print(f"{r['order_id']} p{r['page_no']}: {r['snip']}")
+        return 0
+
+    if args.cmd == "build-site":
+        from .site import SiteBuilder
+        con = db.connect(cfg)
+        db.init_db(con)
+        print(json.dumps(SiteBuilder(cfg, con).build(), default=str))
         return 0
 
     if args.cmd == "rebuild":

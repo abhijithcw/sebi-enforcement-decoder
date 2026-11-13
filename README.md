@@ -57,6 +57,12 @@ Prompt: [`prompts/extract_v1.md`](prompts/extract_v1.md).
 * LLM: Anthropic API, key in `.env`; only relevant sections sent; JSON forced and validated; retry once then `needs_review`; token + ₹ estimate shown before any bulk run.
 * Cron: `deploy/run.sh` under `flock -n`, proposed 21:30 IST daily.
 
+## Site
+
+`sed build-site` writes a static, mobile-first site (no horizontal scroll at 360 px, 44 px tap targets, dark mode) to
+`<data_root>/site/`, served by Caddy/nginx. Client-side fuzzy search uses vendored [MiniSearch](https://github.com/lucaong/minisearch) (MIT)
+over a compact JSON index (names + aliases; **no PANs**).
+
 ## Run locally
 
 ```bash

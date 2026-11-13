@@ -1,0 +1,6 @@
+<a class="card{% if o.struck %} struck{% endif %}" href="{{ root }}o/{{ o.id }}.html">
+  <span class="badge{% if o.interim %} interim{% elif o.settlement %} settle{% endif %}">{{ o.type_label }}</span>{% if o.sat_note %}<span class="badge sat">{{ o.sat_badge }}</span>{% endif %}
+  <div class="t"><strong>{{ o.title }}</strong></div>
+  <div class="meta">{{ o.date }}{% if o.authority %} · {{ o.authority }}{% endif %}</div>
+  {% if o.entity_outcome %}<div class="meta">Outcome: {{ o.entity_outcome }}</div>{% endif %}
+</a>

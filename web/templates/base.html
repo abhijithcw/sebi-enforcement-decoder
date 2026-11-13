@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>{{ title }}{% if title != site_name %} · {{ site_name }}{% endif %}</title>
+<link rel="stylesheet" href="{{ root }}style.css">
+</head><body>
+<header class="top"><div class="wrap">
+  <a class="brand" href="{{ root }}index.html">SEBI Order Decoder</a>
+  <a class="btn" href="{{ root }}index.html#q">Search</a>
+</div></header>
+<main><div class="wrap">
+{% block body %}{% endblock %}
+</div></main>
+<footer><div class="wrap">{{ legal_footer }}<br>Source documents © SEBI. Built {{ built }}.</div></footer>
+{% block scripts %}{% endblock %}
+</body></html>

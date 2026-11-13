@@ -1,0 +1,4 @@
+{% extends "base.html" %}{% block body %}
+<h1>Orders in {{ year }}</h1><p class="meta">{{ orders|length }} orders</p>
+{% for o in orders %}{% include "_order_card.html" %}{% endfor %}
+{% endblock %}

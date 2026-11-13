@@ -1,0 +1,14 @@
+{% extends "base.html" %}{% block body %}
+<span class="badge">{{ e.kind }}</span>
+<h1>{{ e.name }}</h1>
+<dl class="kv">
+  {% if e.pan %}<dt>PAN</dt><dd>{{ e.pan }}</dd>{% endif %}
+  {% if e.cin %}<dt>CIN</dt><dd>{{ e.cin }}</dd>{% endif %}
+  {% if e.isin %}<dt>ISIN</dt><dd>{{ e.isin }}</dd>{% endif %}
+  {% if e.aliases %}<dt>Also appears as</dt><dd>{{ e.aliases|join('; ') }}</dd>{% endif %}
+  <dt>Orders</dt><dd>{{ orders|length }}{% if e.summary %} · {{ e.summary }}{% endif %}</dd>
+</dl>
+<h2>Orders naming this {{ e.kind }}</h2>
+{% for o in orders %}{% include "_order_card.html" %}{% endfor %}
+{% if e.resolution %}<p class="meta">Identity matched by {{ e.resolution }}. Same-name people are not merged unless an identifier matches.</p>{% endif %}
+{% endblock %}

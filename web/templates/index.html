@@ -1,0 +1,17 @@
+{% extends "base.html" %}{% block body %}
+<h1>Search SEBI enforcement orders</h1>
+<p class="meta">Companies, promoters, directors and intermediaries named in SEBI orders. Each page lists orders and their outcomes — it does not label anyone.</p>
+<input id="q" class="search" type="search" inputmode="search" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="Name of a company or person…" aria-label="Search" data-root="{{ root }}">
+<div id="results" aria-live="polite"></div>
+<div id="latest">
+  <div class="stats">
+    <div class="card"><b>{{ stats.orders }}</b><span class="meta">orders</span></div>
+    <div class="card"><b>{{ stats.entities }}</b><span class="meta">entities</span></div>
+  </div>
+  <h2>Browse by year</h2>
+  <p>{% for y in years %}<a class="chip" href="{{ root }}y/{{ y }}.html">{{ y }}</a> {% endfor %}</p>
+  <h2>Latest orders</h2>
+  {% for o in latest %}{% include "_order_card.html" %}{% endfor %}
+</div>
+{% endblock %}
+{% block scripts %}<script src="{{ root }}minisearch.js"></script><script src="{{ root }}app.js"></script>{% endblock %}
