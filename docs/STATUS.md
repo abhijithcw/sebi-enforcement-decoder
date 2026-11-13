@@ -9,7 +9,7 @@ Resume from here after any interruption. Don't redo ticked items.
 | 2 | Scraper (`src/sed/http.py`, `scrape.py`, `sed scrape`/`sed count`): AJAX listing → item HTML → iframe PDF; checkpoints; fixture tests (25 pass). **Not yet run live** — sandbox can't reach sebi.gov.in; first live run on the Pi (`sed count`, then `sed scrape --max-pages 2`) | ✅ code · ⏳ live smoke test |
 | 3 | PDF text (`src/sed/pdftext.py`, `ocr.py`; `sed extract-text` / `sed ocr` / `sed fts`): pypdfium2 page-by-page → `order_pages` + FTS5; scanned detection → OCR queue; 30 tests incl. OCR round-trip + memory check | ✅ 12 Nov 2026 |
 | 4 | LLM extraction (`src/sed/extract.py`; `sed estimate` / `sed extract`): section selection, cache by (sha, prompt, model), forced-tool JSON, pydantic + 1 retry, verbatim-snippet verification, ₹ estimate, monthly cap; 35 tests with fake client. **No real API call made yet.** | ✅ 13 Nov 2026 |
-| 5 | Storage: map `ExtractedOrder` → tables, entity resolution/merge | ⬜ |
+| 5 | Storage (`src/sed/store.py`; `sed rebuild`): `ExtractedOrder` → orders/entities/noticees/penalties/violations/appeals; cin>isin>pan>name resolution with promotion/merge; idempotent; amounts parsed in Python; 39 tests | ✅ 13 Nov 2026 |
 | 6 | Site (`src/sed/site.py` + `web/`): static mobile-first HTML, JSON index, MiniSearch | ⬜ |
 | — | Pi: confirm HDD mount path, set `data_root`, install cron | ⬜ blocked on Pi |
 

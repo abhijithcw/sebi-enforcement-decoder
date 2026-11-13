@@ -22,6 +22,7 @@ CREATE TABLE IF NOT EXISTS orders (
   listing_date        TEXT,                       -- ISO date from listing
   order_date          TEXT,                       -- ISO date printed on the order (LLM/regex), may differ
   issuing_authority   TEXT,                       -- "Whole Time Member", "Adjudicating Officer", "Chief General Manager", ...
+  matter_summary      TEXT,                       -- neutral 2-3 sentence summary from extraction
   signatory           TEXT,                       -- name of officer, if printed
   order_type          TEXT NOT NULL DEFAULT 'other' CHECK (order_type IN
                         ('interim','confirmatory','final','settlement','adjudication','revocation','other')),

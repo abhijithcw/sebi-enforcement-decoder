@@ -265,7 +265,8 @@ def extract_order(cfg: Config, con, client, row, model: str) -> str:
         _mark(con, row["order_id"], "needs_review", model,
               "; ".join(filter(None, [order.review_notes, *probs]))[:900])
         return "needs_review"
-    _mark(con, row["order_id"], "done", model, None)
+    from . import store
+    store.apply_order(con, row["order_id"], order, model, PROMPT_VERSION)   # sets status=done
     return "done"
 
 
