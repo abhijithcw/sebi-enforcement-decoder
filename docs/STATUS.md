@@ -11,8 +11,17 @@ Resume from here after any interruption. Don't redo ticked items.
 | 4 | LLM extraction (`src/sed/extract.py`; `sed estimate` / `sed extract`): section selection, cache by (sha, prompt, model), forced-tool JSON, pydantic + 1 retry, verbatim-snippet verification, ₹ estimate, monthly cap; 35 tests with fake client. **No real API call made yet.** | ✅ 13 Nov 2026 |
 | 5 | Storage (`src/sed/store.py`; `sed rebuild`): `ExtractedOrder` → orders/entities/noticees/penalties/violations/appeals; cin>isin>pan>name resolution with promotion/merge; idempotent; amounts parsed in Python; 39 tests | ✅ 13 Nov 2026 |
 | 6 | Site (`src/sed/site.py`, `web/`; `sed build-site`): static mobile-first HTML, atomic swap, MiniSearch (vendored, MIT) fuzzy search over compact JSON index; legal rules centralised + tested; verified at 360px in headless Chrome | ✅ 13 Nov 2026 |
-| 6b | `sed run` orchestrator (scrape → extract-text → extract → build-site) for cron | ⬜ next |
+| 6b | `sed run` (`src/sed/pipeline.py`): incremental cron pipeline — last 45 days, ≤40 LLM orders/run, monthly ₹ cap, run logged in `runs`; backfill stays manual | ✅ 13 Nov 2026 |
 | — | Pi: confirm HDD mount path, set `data_root`, install cron | ⬜ blocked on Pi |
+
+## First-run checklist on the Pi (in this order)
+
+1. `df -h /mnt/hdd`, set `data_root` (or `SED_DATA_ROOT`), `cp .env.example .env`, add `ANTHROPIC_API_KEY`, `sed init-db`
+2. `sed count` — confirm ~12,386 orders since 2015
+3. `sed scrape --smid 6 --max-pages 2 --pdf-limit 5` — live smoke test (check Hindi handling + PDF download)
+4. `sed extract-text --limit 5` → `sed estimate` (real token sizes, Sonnet vs Haiku) → `sed extract --limit 5` → eyeball results
+5. Only then the backfill: `sed scrape`, `sed extract-text`, `sed estimate`, `sed extract --yes`
+6. `sed build-site`, point Caddy at `<data_root>/site`, install cron (`deploy/install.md`)
 
 ## Open decisions for Abhijith
 

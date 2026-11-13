@@ -51,8 +51,7 @@ def main(argv: list[str] | None = None) -> int:
     ex.add_argument("--yes", action="store_true", help="confirm spend for runs above 25 orders")
     sub.add_parser("rebuild", help="re-apply cached extractions to the tables (no API calls)")
     sub.add_parser("build-site", help="regenerate the static site + search index")
-    for name in ("run",):
-        sub.add_parser(name)
+    sub.add_parser("run", help="incremental cron pipeline (scrape → text → extract → site)")
     args = p.parse_args(argv)
 
     if args.cmd == "schema":
@@ -102,6 +101,19 @@ def main(argv: list[str] | None = None) -> int:
             for r in pdftext.search(con, args.query):
                 print(f"{r['order_id']} p{r['page_no']}: {r['snip']}")
         return 0
+
+    if args.cmd == "run":
+        from . import pipeline
+        logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
+        con = db.connect(cfg)
+        db.init_db(con)
+        client = None
+        if cfg.anthropic_api_key:
+            import anthropic
+            client = anthropic.Anthropic(api_key=cfg.anthropic_api_key)
+        rep = pipeline.run(cfg, con, client=client)
+        print(json.dumps(rep, default=str))
+        return 1 if "error" in rep else 0
 
     if args.cmd == "build-site":
         from .site import SiteBuilder
