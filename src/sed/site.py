@@ -140,7 +140,8 @@ class SiteBuilder:
             res = {"cin_printed": "CIN printed in an order", "isin_printed": "ISIN", "pan_printed": "PAN printed in an order",
                    "name_exact": "name only"}.get(e["resolution_method"])
             ev = {"name": e["canonical_name"], "kind": e["entity_kind"], "pan": mask_pan(e["pan"]), "cin": e["cin"],
-                  "isin": e["isin"], "aliases": aliases, "resolution": res, "summary": None}
+                  "isin": e["isin"], "aliases": aliases, "resolution": res, "summary": None,
+                  "name_only": e["resolution_method"] == "name_exact"}
             self._render("entity.html", out / "e" / f"{slug(e['entity_id'])}.html", "../", e["canonical_name"], e=ev, orders=views)
             n += 1
         return n

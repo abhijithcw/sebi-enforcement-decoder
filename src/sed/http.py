@@ -107,8 +107,7 @@ class Http:
                     if r.status_code in RETRY_STATUSES:
                         raise FetchError(f"HTTP {r.status_code}")
                     with open(path, "wb") as f:
-                        for chunk in r.iter_bytes(1 << 16):
-                            f.write(chunk)
+                        f.writelines(r.iter_bytes(1 << 16))
                     status = r.status_code
                 self._remember(key, url, method, status, path)
                 return Response(status=status, path=path, from_cache=False)

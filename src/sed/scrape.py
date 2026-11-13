@@ -31,6 +31,7 @@ log = logging.getLogger(__name__)
 
 LISTING_URL = "/sebiweb/ajax/home/getnewslistinfo.jsp"
 PAGE_SIZE = 25
+MAX_CONSECUTIVE_LISTING_FAILURES = 2
 
 # smid -> (source_category, smText as the site sends it)
 CATEGORIES: dict[int, tuple[str, str]] = {
@@ -298,13 +299,23 @@ class Scraper:
         to = to or date.today()
         smids = smids or [s for s in CATEGORIES if CATEGORIES[s][0] in set(self.cfg.scrape["categories"])]
         report: dict = {"listing": {}, "resolve": None, "download": None}
+        failures = 0
         for smid in smids:
             for w0, w1 in windows(frm, to):
+                if failures >= MAX_CONSECUTIVE_LISTING_FAILURES:
+                    break
                 try:
                     report["listing"][f"{smid}:{w0}:{w1}"] = self.scrape_listing(smid, w0, w1, max_pages=max_pages)
+                    failures = 0
                 except FetchError as e:
+                    failures += 1
                     log.error("listing smid=%s %s..%s: %s", smid, w0, w1, e)
                     report["listing"][f"{smid}:{w0}:{w1}"] = {"error": str(e)}
+        if failures >= MAX_CONSECUTIVE_LISTING_FAILURES:
+            # circuit breaker: host is down/blocking us — stop hammering it, retry on the next cron run
+            report["aborted"] = f"sebi.gov.in unreachable after {failures} consecutive listing failures"
+            log.error(report["aborted"])
+            return report
         if not listing_only:
             report["resolve"] = self.resolve_pdfs(limit=pdf_limit)
             report["download"] = self.download_pdfs(limit=pdf_limit)

@@ -17,11 +17,11 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = ["pytest>=8", "ruff>=0.5"]
-ocr = ["pytesseract>=0.3"]
+dev = ["pytest>=8", "ruff>=0.5", "reportlab>=4", "pillow>=10"]
+ocr = ["pytesseract>=0.3", "pillow>=10"]
 
 [project.scripts]
-sed = "sed.cli:main"
+sedec = "sed.cli:main"   # NOT "sed": a venv script named sed would shadow GNU sed
 
 [build-system]
 requires = ["setuptools>=68"]
@@ -34,5 +34,10 @@ where = ["src"]
 line-length = 100
 target-version = "py311"
 
+[tool.ruff.lint]
+# local-time dates are intentional (Pi runs in Asia/Kolkata); broad excepts are log-and-continue by design
+ignore = ["DTZ", "BLE001", "RUF046", "FURB122"]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+pythonpath = ["src", "."]

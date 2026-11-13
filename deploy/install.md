@@ -11,7 +11,7 @@ git clone https://github.com/abhijithcw/sebi-enforcement-decoder ~/projects/sebi
 cd ~/projects/sebi-enforcement-decoder
 python3 -m venv .venv && .venv/bin/pip install -e ".[dev]"
 cp .env.example .env && nano .env            # ANTHROPIC_API_KEY
-.venv/bin/sed init-db
+.venv/bin/sedec init-db
 
 # 3. cron (flock-guarded)
 chmod +x deploy/run.sh

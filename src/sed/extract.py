@@ -214,11 +214,17 @@ class SpendCapReached(Exception):
 def _call(client, cfg: Config, model: str, system: str, user: str, retry_note: str | None) -> tuple[str, int, int]:
     msgs = [{"role": "user", "content": user + (f"\n\nYour previous output was invalid: {retry_note}\n"
                                                 "Return corrected JSON." if retry_note else "")}]
-    resp = client.messages.create(
-        model=model, max_tokens=int(cfg.llm["max_output_tokens"]), temperature=0, system=system, messages=msgs,
-        tools=[{"name": TOOL_NAME, "description": "Record the structured facts extracted from the order.",
-                "input_schema": json_schema()}],
-        tool_choice={"type": "tool", "name": TOOL_NAME})
+    kwargs = {
+        "model": model, "max_tokens": int(cfg.llm["max_output_tokens"]), "system": system, "messages": msgs,
+        "tools": [{"name": TOOL_NAME, "description": "Record the structured facts extracted from the order.",
+                   "input_schema": json_schema()}],
+        "tool_choice": {"type": "tool", "name": TOOL_NAME}}
+    try:
+        resp = client.messages.create(temperature=0, **kwargs)      # deterministic where the model allows it
+    except Exception as e:
+        if "temperature" not in str(e).lower():
+            raise
+        resp = client.messages.create(**kwargs)                     # model rejects temperature: use its default
     block = next((b for b in resp.content if getattr(b, "type", "") == "tool_use"), None)
     raw = json.dumps(block.input) if block else ""
     return raw, resp.usage.input_tokens, resp.usage.output_tokens

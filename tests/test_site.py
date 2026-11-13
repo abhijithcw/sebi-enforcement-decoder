@@ -1,12 +1,11 @@
 import json
-import re
 import sqlite3
 
 import pytest
 
 from sed import config, db, store
 from sed.site import SiteBuilder
-from tests.test_store import order  # noqa
+from tests.test_store import order
 
 LEGAL = "Indicators derived from public filings; not an allegation, investment advice, or legal opinion."
 

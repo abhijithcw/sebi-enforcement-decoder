@@ -1,6 +1,6 @@
 """Low-priority OCR for scanned PDFs (ocr_status='queued'). Needs `tesseract-ocr` + `pip install .[ocr]`.
 Renders one page at a time with pypdfium2 (150 dpi) so memory stays flat; run it separately/at night:
-    nice -n 19 sed ocr --limit 20
+    nice -n 19 sedec ocr --limit 20
 """
 from __future__ import annotations
 

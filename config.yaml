@@ -62,7 +62,7 @@ cron:
   # proposed slot: 21:30 IST daily — well clear of governance-red-flag-engine (~19:45 IST)
   schedule: "30 21 * * *"
   lock: /tmp/sebi-enforcement-decoder.lock
-  incremental_days: 45             # `sed run` only re-scans this window; backfill is manual
+  incremental_days: 45             # `sedec run` only re-scans this window; backfill is manual
   max_llm_orders_per_run: 40       # on top of the monthly ₹ cap
 
 legal:

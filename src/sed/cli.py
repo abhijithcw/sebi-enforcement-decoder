@@ -1,12 +1,12 @@
-"""`sed` command line. Stages are added as steps land:
-  sed init-db            create/upgrade the SQLite schema      (step 1)
-  sed schema             print the LLM JSON schema             (step 1)
-  sed scrape             listing -> html -> pdf                (step 2)
-  sed extract-text       pdf -> order_pages + FTS              (step 3)
-  sed estimate           token count + ₹ cost before bulk run  (step 4)
-  sed extract            structured LLM extraction             (step 4)
-  sed build-site         static HTML + JSON search index       (step 6)
-  sed run                all of the above, for cron            (step 6)
+"""`sedec` command line. Stages are added as steps land:
+  sedec init-db            create/upgrade the SQLite schema      (step 1)
+  sedec schema             print the LLM JSON schema             (step 1)
+  sedec scrape             listing -> html -> pdf                (step 2)
+  sedec extract-text       pdf -> order_pages + FTS              (step 3)
+  sedec estimate           token count + ₹ cost before bulk run  (step 4)
+  sedec extract            structured LLM extraction             (step 4)
+  sedec build-site         static HTML + JSON search index       (step 6)
+  sedec run                all of the above, for cron            (step 6)
 """
 from __future__ import annotations
 
@@ -20,7 +20,7 @@ from . import config, db, schema
 
 
 def main(argv: list[str] | None = None) -> int:
-    p = argparse.ArgumentParser(prog="sed", description=__doc__,
+    p = argparse.ArgumentParser(prog="sedec", description=__doc__,
                                 formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument("--config", default=None, help="path to config.yaml")
     sub = p.add_subparsers(dest="cmd", required=True)

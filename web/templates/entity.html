@@ -10,5 +10,5 @@
 </dl>
 <h2>Orders naming this {{ e.kind }}</h2>
 {% for o in orders %}{% include "_order_card.html" %}{% endfor %}
-{% if e.resolution %}<p class="meta">Identity matched by {{ e.resolution }}. Same-name people are not merged unless an identifier matches.</p>{% endif %}
+{% if e.name_only and e.kind != 'company' %}<div class="banner interim">Matched by name only. Different people who share this name may appear together on this page — check each order before drawing any conclusion.</div>{% elif e.resolution %}<p class="meta">Identity matched by {{ e.resolution }}.</p>{% endif %}
 {% endblock %}

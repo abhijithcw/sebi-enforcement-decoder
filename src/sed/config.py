@@ -10,7 +10,20 @@ from typing import Any
 import yaml
 from dotenv import load_dotenv
 
-REPO_ROOT = Path(__file__).resolve().parents[2]
+
+def _find_root() -> Path:
+    """Repo root holds config.yaml, sql/, prompts/, web/. Editable install (`pip install -e .`) is the supported
+    way; SED_HOME or running from the repo directory also work. Fails loudly instead of reading from site-packages."""
+    if os.environ.get("SED_HOME"):
+        return Path(os.environ["SED_HOME"]).resolve()
+    for cand in (Path(__file__).resolve().parents[2], Path.cwd()):
+        if (cand / "config.yaml").exists() and (cand / "sql" / "schema.sql").exists():
+            return cand
+    raise RuntimeError("sebi-enforcement-decoder repo files not found. Use `pip install -e .` from the repo, "
+                       "run from the repo directory, or set SED_HOME=/path/to/sebi-enforcement-decoder")
+
+
+REPO_ROOT = _find_root()
 
 
 class Config:

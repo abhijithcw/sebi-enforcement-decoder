@@ -1,7 +1,7 @@
-"""`sed run` — the unattended cron pipeline. INCREMENTAL only:
+"""`sedec run` — the unattended cron pipeline. INCREMENTAL only:
   scrape last N days → PDFs → text → LLM extraction (capped orders/run + monthly ₹ cap) → site.
-The historical backfill is deliberately NOT automatic: run `sed count`, `sed estimate`, then
-`sed scrape` / `sed extract --yes` yourself so you see counts and ₹ first."""
+The historical backfill is deliberately NOT automatic: run `sedec count`, `sedec estimate`, then
+`sedec scrape` / `sedec extract --yes` yourself so you see counts and ₹ first."""
 from __future__ import annotations
 
 import json

@@ -59,14 +59,18 @@ def resolve_entity(con, name: str, kind: str, *, pan=None, cin=None, isin=None, 
     method = "cin_printed" if eid.startswith("cin:") else "isin_printed" if eid.startswith("isin:") \
         else "pan_printed" if eid.startswith("pan:") else "name_exact"
     name_eid = f"name:{norm}"
-    if strong and con.execute("SELECT 1 FROM entities WHERE entity_id=?", (name_eid,)).fetchone():
+    # Identity safety: only COMPANIES are auto-promoted/merged by name. Two people named "Ramesh Kumar" are
+    # different people until an identifier says otherwise, so an individual's name-only entity is never
+    # folded into a PAN entity (and a PAN entity never absorbs a bare name).
+    mergeable = kind == "company"
+    if strong and mergeable and con.execute("SELECT 1 FROM entities WHERE entity_id=?", (name_eid,)).fetchone():
         # a provisional name-only entity exists for this spelling: promote it
         if not con.execute("SELECT 1 FROM entities WHERE entity_id=?", (eid,)).fetchone():
             con.execute("INSERT INTO entities(entity_id,canonical_name,normalized_name,entity_kind,pan,cin,isin,din,"
                         "resolution_method,resolution_conf) SELECT ?,canonical_name,normalized_name,entity_kind,?,?,?,?,?,1.0 "
                         "FROM entities WHERE entity_id=?", (eid, pan, cin, isin, din, method, name_eid))
         _merge_entity(con, name_eid, eid)
-    elif not strong:
+    elif not strong and mergeable:
         # reuse a strong entity that already carries this normalised name (same spelling, id seen earlier)
         hit = con.execute("SELECT entity_id FROM entities WHERE normalized_name=? AND entity_id NOT LIKE 'name:%' "
                           "AND entity_kind=? ORDER BY resolution_conf DESC LIMIT 2", (norm, kind)).fetchall()
@@ -114,19 +118,24 @@ def apply_order(con, order_id: str, o: ExtractedOrder, model: str, prompt_versio
         for v in o.order_wide_violations:
             _insert_violation(con, order_id, None, v)
             stats["violations"] += 1
-        for n in o.noticees:
-            kind = "company" if n.role.value in ("company", "broker") and entity.guess_kind(n.name_as_printed) == "company" \
-                else entity.guess_kind(n.name_as_printed)
+        seen_names: set[str] = set()
+        for idx, n in enumerate(o.noticees, 1):
+            printed = n.name_as_printed
+            if printed in seen_names:          # identical names in one order: keep both rows, never merge silently
+                printed = f"{printed} [noticee {n.noticee_no or idx}]"
+            seen_names.add(n.name_as_printed)
+            kind = "company" if n.role.value == "company" else entity.guess_kind(n.name_as_printed)
             isin = o.subject_isin if subj_norm and entity.normalise(n.name_as_printed) == subj_norm else None
             eid = resolve_entity(con, n.name_as_printed, kind, pan=n.pan, cin=n.cin, isin=isin, din=n.din)
             cur = con.execute(
                 "INSERT INTO noticees(order_id,noticee_no,name_as_printed,entity_id,role,role_detail,outcome,"
                 "outcome_detail,debarment_months,page_ref,snippet,confidence) VALUES(?,?,?,?,?,?,?,?,?,?,?,?) "
                 "ON CONFLICT(order_id,name_as_printed) DO UPDATE SET outcome=excluded.outcome",
-                (order_id, n.noticee_no, n.name_as_printed, eid, n.role.value, n.role_detail, n.outcome.value,
+                (order_id, n.noticee_no, printed, eid, n.role.value, n.role_detail, n.outcome.value,
                  n.outcome_detail, n.debarment_months, n.evidence.page, n.evidence.snippet, n.confidence))
-            nid = cur.lastrowid or con.execute("SELECT noticee_id FROM noticees WHERE order_id=? AND name_as_printed=?",
-                                               (order_id, n.name_as_printed)).fetchone()[0]
+            del cur   # lastrowid is unreliable after ON CONFLICT DO UPDATE; always look the id up
+            nid = con.execute("SELECT noticee_id FROM noticees WHERE order_id=? AND name_as_printed=?",
+                              (order_id, printed)).fetchone()[0]
             stats["noticees"] += 1
             for p in n.penalties:
                 amt = parse_inr(p.amount_as_printed)
@@ -160,4 +169,4 @@ def rebuild_from_cache(con, model: str | None = None) -> dict:
     return stats
 
 
-__all__ = ["apply_order", "resolve_entity", "rebuild_from_cache", "reg_code", "Outcome"]
+__all__ = ["Outcome", "apply_order", "rebuild_from_cache", "reg_code", "resolve_entity"]

@@ -7,4 +7,4 @@ cd "$(dirname "$0")/.."
 DATA_ROOT="${SED_DATA_ROOT:-/mnt/hdd/sebi-enforcement-decoder}"   # placeholder until Pi mount confirmed
 mkdir -p "$DATA_ROOT/logs"
 exec flock -n /tmp/sebi-enforcement-decoder.lock \
-  .venv/bin/sed run >> "$DATA_ROOT/logs/run-$(date +%F).log" 2>&1
+  .venv/bin/sedec run >> "$DATA_ROOT/logs/run-$(date +%F).log" 2>&1

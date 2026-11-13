@@ -1,4 +1,3 @@
-import json
 import sqlite3
 from types import SimpleNamespace as NS
 
@@ -108,3 +107,14 @@ def test_estimate_and_sections(env):
     nums = [p for p, _ in sel]
     assert 1 in nums and 2 in nums and 40 in nums and 7 in nums
     assert sum(extract.est_tokens(t) for _, t in sel) <= 6000 + 200
+
+
+def test_temperature_rejected_falls_back(env):
+    cfg, con = env
+
+    class Picky(FakeClient):
+        def create(self, **kw):
+            if "temperature" in kw:
+                raise ValueError("temperature is not supported for this model")
+            return super().create(**kw)
+    assert extract.run(cfg, con, Picky(good_payload()), "claude-sonnet-5-5")["done"] == 1

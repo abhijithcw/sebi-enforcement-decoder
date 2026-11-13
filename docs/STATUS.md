@@ -6,22 +6,22 @@ Resume from here after any interruption. Don't redo ticked items.
 |---|---|---|
 | 0 | GitHub repo attached (`abhijithcw/sebi-enforcement-decoder`) | ✅ 10 Nov 2026 |
 | 1 | Extraction schema: `sql/schema.sql`, `src/sed/schema.py`, `prompts/extract_v1.md`, `amounts.py`, `entity.py`, `db.py`, `config.py`, tests (21 pass) | ✅ 10 Nov 2026 — awaiting user review before scale |
-| 2 | Scraper (`src/sed/http.py`, `scrape.py`, `sed scrape`/`sed count`): AJAX listing → item HTML → iframe PDF; checkpoints; fixture tests (25 pass). **Not yet run live** — sandbox can't reach sebi.gov.in; first live run on the Pi (`sed count`, then `sed scrape --max-pages 2`) | ✅ code · ⏳ live smoke test |
-| 3 | PDF text (`src/sed/pdftext.py`, `ocr.py`; `sed extract-text` / `sed ocr` / `sed fts`): pypdfium2 page-by-page → `order_pages` + FTS5; scanned detection → OCR queue; 30 tests incl. OCR round-trip + memory check | ✅ 12 Nov 2026 |
-| 4 | LLM extraction (`src/sed/extract.py`; `sed estimate` / `sed extract`): section selection, cache by (sha, prompt, model), forced-tool JSON, pydantic + 1 retry, verbatim-snippet verification, ₹ estimate, monthly cap; 35 tests with fake client. **No real API call made yet.** | ✅ 13 Nov 2026 |
-| 5 | Storage (`src/sed/store.py`; `sed rebuild`): `ExtractedOrder` → orders/entities/noticees/penalties/violations/appeals; cin>isin>pan>name resolution with promotion/merge; idempotent; amounts parsed in Python; 39 tests | ✅ 13 Nov 2026 |
-| 6 | Site (`src/sed/site.py`, `web/`; `sed build-site`): static mobile-first HTML, atomic swap, MiniSearch (vendored, MIT) fuzzy search over compact JSON index; legal rules centralised + tested; verified at 360px in headless Chrome | ✅ 13 Nov 2026 |
-| 6b | `sed run` (`src/sed/pipeline.py`): incremental cron pipeline — last 45 days, ≤40 LLM orders/run, monthly ₹ cap, run logged in `runs`; backfill stays manual | ✅ 13 Nov 2026 |
+| 2 | Scraper (`src/sed/http.py`, `scrape.py`, `sedec scrape`/`sedec count`): AJAX listing → item HTML → iframe PDF; checkpoints; fixture tests (25 pass). **Not yet run live** — sandbox can't reach sebi.gov.in; first live run on the Pi (`sedec count`, then `sedec scrape --max-pages 2`) | ✅ code · ⏳ live smoke test |
+| 3 | PDF text (`src/sed/pdftext.py`, `ocr.py`; `sedec extract-text` / `sedec ocr` / `sedec fts`): pypdfium2 page-by-page → `order_pages` + FTS5; scanned detection → OCR queue; 30 tests incl. OCR round-trip + memory check | ✅ 12 Nov 2026 |
+| 4 | LLM extraction (`src/sed/extract.py`; `sedec estimate` / `sedec extract`): section selection, cache by (sha, prompt, model), forced-tool JSON, pydantic + 1 retry, verbatim-snippet verification, ₹ estimate, monthly cap; 35 tests with fake client. **No real API call made yet.** | ✅ 13 Nov 2026 |
+| 5 | Storage (`src/sed/store.py`; `sedec rebuild`): `ExtractedOrder` → orders/entities/noticees/penalties/violations/appeals; cin>isin>pan>name resolution with promotion/merge; idempotent; amounts parsed in Python; 39 tests | ✅ 13 Nov 2026 |
+| 6 | Site (`src/sed/site.py`, `web/`; `sedec build-site`): static mobile-first HTML, atomic swap, MiniSearch (vendored, MIT) fuzzy search over compact JSON index; legal rules centralised + tested; verified at 360px in headless Chrome | ✅ 13 Nov 2026 |
+| 6b | `sedec run` (`src/sed/pipeline.py`): incremental cron pipeline — last 45 days, ≤40 LLM orders/run, monthly ₹ cap, run logged in `runs`; backfill stays manual | ✅ 13 Nov 2026 |
 | — | Pi: confirm HDD mount path, set `data_root`, install cron | ⬜ blocked on Pi |
 
 ## First-run checklist on the Pi (in this order)
 
-1. `df -h /mnt/hdd`, set `data_root` (or `SED_DATA_ROOT`), `cp .env.example .env`, add `ANTHROPIC_API_KEY`, `sed init-db`
-2. `sed count` — confirm ~12,386 orders since 2015
-3. `sed scrape --smid 6 --max-pages 2 --pdf-limit 5` — live smoke test (check Hindi handling + PDF download)
-4. `sed extract-text --limit 5` → `sed estimate` (real token sizes, Sonnet vs Haiku) → `sed extract --limit 5` → eyeball results
-5. Only then the backfill: `sed scrape`, `sed extract-text`, `sed estimate`, `sed extract --yes`
-6. `sed build-site`, point Caddy at `<data_root>/site`, install cron (`deploy/install.md`)
+1. `df -h /mnt/hdd`, set `data_root` (or `SED_DATA_ROOT`), `cp .env.example .env`, add `ANTHROPIC_API_KEY`, `sedec init-db`
+2. `sedec count` — confirm ~12,386 orders since 2015
+3. `sedec scrape --smid 6 --max-pages 2 --pdf-limit 5` — live smoke test (check Hindi handling + PDF download)
+4. `sedec extract-text --limit 5` → `sedec estimate` (real token sizes, Sonnet vs Haiku) → `sedec extract --limit 5` → eyeball results
+5. Only then the backfill: `sedec scrape`, `sedec extract-text`, `sedec estimate`, `sedec extract --yes`
+6. `sedec build-site`, point Caddy at `<data_root>/site`, install cron (`deploy/install.md`)
 
 ## Open decisions for Abhijith
 
@@ -53,3 +53,14 @@ Resume from here after any interruption. Don't redo ticked items.
   currently never, so the link falls back to sat.gov.in. Revisit if a SAT source is ever added.
 * Entities merge only on CIN/ISIN/PAN or exact normalised name — two people with the same name and no identifier
   can be wrongly merged; the entity page says "identity matched by name only" in that case.
+
+## Audit 13 Nov 2026 (fixed)
+
+* CLI renamed `sed` → **`sedec`** (a venv script named `sed` shadows GNU sed for every shell script while the venv is active).
+* Individuals are never auto-merged by name (only companies are); name-only person pages carry a warning banner.
+* Duplicate printed names in one order keep separate rows (`name [noticee N]`); `lastrowid` bug removed.
+* `temperature=0` falls back to the model default if a model rejects it.
+* Root discovery fails loudly on non-editable installs (use `pip install -e .` or `SED_HOME`).
+* Scraper circuit breaker: 2 consecutive listing failures abort the scrape stage; cron still rebuilds the site.
+* Dev extras now include reportlab/pillow; `pytest` works without env vars. 50 tests, ruff clean, real-PDF end-to-end test.
+* **Unverified until live:** Anthropic tool-use schema acceptance (pydantic `$defs`), real SEBI HTML edge cases, real PDF layouts.

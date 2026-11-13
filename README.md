@@ -59,7 +59,7 @@ Prompt: [`prompts/extract_v1.md`](prompts/extract_v1.md).
 
 ## Site
 
-`sed build-site` writes a static, mobile-first site (no horizontal scroll at 360 px, 44 px tap targets, dark mode) to
+`sedec build-site` writes a static, mobile-first site (no horizontal scroll at 360 px, 44 px tap targets, dark mode) to
 `<data_root>/site/`, served by Caddy/nginx. Client-side fuzzy search uses vendored [MiniSearch](https://github.com/lucaong/minisearch) (MIT)
 over a compact JSON index (names + aliases; **no PANs**).
 
@@ -69,7 +69,7 @@ over a compact JSON index (names + aliases; **no PANs**).
 python3 -m venv .venv && .venv/bin/pip install -e ".[dev]"
 cp .env.example .env            # add ANTHROPIC_API_KEY
 export SED_DATA_ROOT=/tmp/sed   # anywhere with space; on the Pi this is the HDD
-.venv/bin/sed init-db
+.venv/bin/sedec init-db
 .venv/bin/pytest
 ```
 

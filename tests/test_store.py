@@ -61,16 +61,31 @@ def test_idempotent(con):
     assert con.execute("SELECT COUNT(*) FROM appeals").fetchone()[0] == 1
 
 
-def test_name_entity_promoted_when_pan_appears(con):
+def test_individuals_never_merged_by_name(con):
     no_pan = order(subject_isin=None, appeal_mentioned="none")
     no_pan.noticees[1].pan = None
     store.apply_order(con, "o1", no_pan, "m", "extract_v1")
-    assert con.execute("SELECT entity_id FROM noticees WHERE name_as_printed='Ramesh Kumar'").fetchone()[0] == "name:RAMESH KUMAR"
-    store.apply_order(con, "o2", order(), "m", "extract_v1")      # same person, PAN now printed
-    rows = {r[0] for r in con.execute("SELECT entity_id FROM noticees WHERE name_as_printed='Ramesh Kumar'")}
-    assert rows == {"pan:ABCDE1234F"}
-    assert con.execute("SELECT COUNT(*) FROM entities WHERE entity_id='name:RAMESH KUMAR'").fetchone()[0] == 0
-    assert con.execute("SELECT COUNT(*) FROM entities WHERE entity_id='pan:ABCDE1234F'").fetchone()[0] == 1
+    store.apply_order(con, "o2", order(), "m", "extract_v1")       # a Ramesh Kumar WITH a PAN
+    ids = {r[0] for r in con.execute("SELECT entity_id FROM noticees WHERE name_as_printed='Ramesh Kumar'")}
+    assert ids == {"name:RAMESH KUMAR", "pan:ABCDE1234F"}          # kept apart: could be different people
+
+
+def test_company_promoted_when_isin_appears(con):
+    first = order(subject_isin=None, appeal_mentioned="none")
+    store.apply_order(con, "o1", first, "m", "extract_v1")
+    assert con.execute("SELECT entity_id FROM noticees WHERE name_as_printed='Foo Ltd.'").fetchone()[0] == "name:FOO"
+    store.apply_order(con, "o2", order(), "m", "extract_v1")       # subject ISIN now known
+    assert {r[0] for r in con.execute("SELECT entity_id FROM noticees WHERE name_as_printed='Foo Ltd.'")} == {"isin:INE123A01016"}
+    assert con.execute("SELECT COUNT(*) FROM entities WHERE entity_id='name:FOO'").fetchone()[0] == 0
+
+
+def test_duplicate_noticee_names_keep_own_penalties(con):
+    o = order(appeal_mentioned="none")
+    dup = o.noticees[1].model_copy(deep=True)
+    dup.penalties[0].amount_as_printed = "Rs. 2,00,000/-"
+    o.noticees.append(dup)
+    store.apply_order(con, "o1", o, "m", "extract_v1")
+    assert con.execute("SELECT COUNT(*) FROM penalties").fetchone()[0] == 3
 
 
 def test_reg_code():

@@ -4,8 +4,15 @@ from datetime import date
 from pathlib import Path
 
 from sed import db
-from sed.scrape import (CATEGORIES, Scraper, extract_pdf_url, order_id_for, parse_listing,
-                        parse_listing_date, windows)
+from sed.scrape import (
+    CATEGORIES,
+    Scraper,
+    extract_pdf_url,
+    order_id_for,
+    parse_listing,
+    parse_listing_date,
+    windows,
+)
 
 FX = Path(__file__).parent / "fixtures"
 
@@ -69,3 +76,19 @@ def test_scrape_listing_idempotent_and_resumable(tmp_path):
     pages_before = s.pages
     assert s.scrape_listing(6, date(2026, 1, 1), date(2026, 12, 31))["skipped"]   # checkpoint: done
     assert s.pages == pages_before
+
+
+def test_circuit_breaker_stops_after_repeated_failures(tmp_path):
+    from sed import config
+    from sed.http import FetchError
+    cfg = config.load()
+    con = sqlite3.connect(tmp_path / "t.sqlite"); con.row_factory = sqlite3.Row
+    db.init_db(con)
+    calls = []
+
+    class Down(FakeScraper):
+        def fetch_listing_page(self, *a, **k):
+            calls.append(1)
+            raise FetchError("down")
+    rep = Down(con, cfg).run(frm=date(2015, 1, 1), to=date(2026, 11, 1))
+    assert "unreachable" in rep["aborted"] and len(calls) == 2 and rep["download"] is None
